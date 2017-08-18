@@ -50,11 +50,12 @@ public class Activity_TakePhotoActivity extends AppCompatActivity implements Vie
             case R.id.btCamera:
 
                 takePictureManager = new TakePictureManager(this);
-                takePictureManager.setTailor(1, 1, 350, 350);
+                takePictureManager.setTailor(1, 3, 350, 350);
                 takePictureManager.startTakeWayByCarema();
                 takePictureManager.setTakePictureCallBackListener(new TakePictureManager.takePictureCallBackListener() {
                     @Override
                     public void successful(boolean isTailor, File outFile, Uri filePath) {
+                        tvShow.setText(filePath.getPath());
                         Picasso.with(Activity_TakePhotoActivity.this).load(outFile).error(R.mipmap.ic_launcher).into(ivShow);
                     }
 
@@ -72,6 +73,7 @@ public class Activity_TakePhotoActivity extends AppCompatActivity implements Vie
                 takePictureManager.setTakePictureCallBackListener(new TakePictureManager.takePictureCallBackListener() {
                     @Override
                     public void successful(boolean isTailor, File outFile, Uri filePath) {
+                        tvShow.setText(filePath.getPath());
                         Picasso.with(Activity_TakePhotoActivity.this).load(outFile).error(R.mipmap.ic_launcher).into(ivShow);
                     }
 

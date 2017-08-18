@@ -56,6 +56,7 @@ public class Fragment extends android.support.v4.app.Fragment implements View.On
                 takePictureManager.setTakePictureCallBackListener(new TakePictureManager.takePictureCallBackListener() {
                     @Override
                     public void successful(boolean isTailor, File outFile, Uri filePath) {
+                        tvShow.setText(filePath.getPath());
                         Picasso.with(getActivity()).load(outFile).error(R.mipmap.ic_launcher).into(ivShow);
                     }
 
@@ -72,6 +73,7 @@ public class Fragment extends android.support.v4.app.Fragment implements View.On
                 takePictureManager.setTakePictureCallBackListener(new TakePictureManager.takePictureCallBackListener() {
                     @Override
                     public void successful(boolean isTailor, File outFile, Uri filePath) {
+                        tvShow.setText(filePath.getPath());
                         Picasso.with(getActivity()).load(outFile).error(R.mipmap.ic_launcher).into(ivShow);
                     }
 

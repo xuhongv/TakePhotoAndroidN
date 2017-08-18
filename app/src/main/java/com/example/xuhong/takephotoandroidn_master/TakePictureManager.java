@@ -97,7 +97,6 @@ public class TakePictureManager {
         isActicity = true;
         mContext = mActivity;
         FILE_PROVIDER_AUTHORITY = mActivity.getPackageName() + ".fileprovider";
-        Log.e("==w","包名："+FILE_PROVIDER_AUTHORITY);
     }
 
     public TakePictureManager(Fragment mFragment) {
@@ -179,12 +178,12 @@ public class TakePictureManager {
         intent.putExtra("scale", true);// 去黑边
 
         // aspectX aspectY 是宽高的比例
-        intent.putExtra("aspectX", 1);
-        intent.putExtra("aspectY", 1);
+        intent.putExtra("aspectX", aspectX);
+        intent.putExtra("aspectY", aspectY);
 
         // outputX,outputY 是剪裁图片的宽高
-        intent.putExtra("outputX", 800);
-        intent.putExtra("outputY", 480);
+        intent.putExtra("outputX", outputX);
+        intent.putExtra("outputY", outputY);
         intent.putExtra("return-data", false);// true:不返回uri，false：返回uri
         intent.putExtra("scaleUpIfNeeded", true);//黑边
         intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(output));
