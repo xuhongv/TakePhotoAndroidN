@@ -57,7 +57,7 @@ public class Activity_TakePhotoActivity extends AppCompatActivity implements Vie
     private Uri outputUri;
     private String imgPath = FileUtils.generateImgePath(this);
 
-    private static final String FILE_PROVIDER_AUTHORITY = "com.chaychan.androidnadaption.fileprovider";
+    private static final String FILE_PROVIDER_AUTHORITY = "com.example.xuhong.takephotoandroidn_master.fileprovider";
 
 
 
