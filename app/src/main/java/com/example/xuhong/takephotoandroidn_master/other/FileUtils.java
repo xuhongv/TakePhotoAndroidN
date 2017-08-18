@@ -1,29 +1,32 @@
 package com.example.xuhong.takephotoandroidn_master.other;
 
 
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Environment;
+import android.provider.MediaStore;
 
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * @author 写文件的工具类
  */
 public class FileUtils {
 
-    public static final String DOWNLOAD_DIR = "download";
-    public static final String CACHE_DIR = "cache";
     public static final String ICON_DIR = "icon";
-    public static final String IMAGE_LOADER_DIR = "image";
-    public static final String MAP_CACHE_DIR = "map";
-
     public static final String APP_STORAGE_ROOT = "AndroidNAdaption";
 
     /**
@@ -44,7 +47,7 @@ public class FileUtils {
      * @param name
      * @return
      */
-    public static String getAppDir(Context context, String name) {
+    public static String getAppDir(Context context,String name) {
         StringBuilder sb = new StringBuilder();
         if (isSDCardAvailable()) {
             sb.append(getAppExternalStoragePath());
@@ -96,53 +99,100 @@ public class FileUtils {
         return true;
     }
 
+
     /**
      * 产生图片的路径，带文件夹和文件名，文件名为当前毫秒数
      */
     public static String generateImgePath(Context context) {
-        return getAppDir(context, ICON_DIR) + String.valueOf(System.currentTimeMillis()) + ".jpg";
+        return getAppDir(context,ICON_DIR) + String.valueOf(System.currentTimeMillis()) + ".jpg";
+    }
+
+    /**
+     * 安卓7.0裁剪根据文件路径获取uri
+     */
+    public static Uri getImageContentUri(Context context, File imageFile) {
+        String filePath = imageFile.getAbsolutePath();
+        Cursor cursor = context.getContentResolver().query(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                new String[]{MediaStore.Images.Media._ID},
+                MediaStore.Images.Media.DATA + "=? ",
+                new String[]{filePath}, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            int id = cursor.getInt(cursor
+                    .getColumnIndex(MediaStore.MediaColumns._ID));
+            Uri baseUri = Uri.parse("content://media/external/images/media");
+            return Uri.withAppendedPath(baseUri, "" + id);
+        } else {
+            if (imageFile.exists()) {
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Images.Media.DATA, filePath);
+                return context.getContentResolver().insert(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+            } else {
+                return null;
+            }
+        }
     }
 
 
     /**
-     * 按质量压缩bm
+     * 返回一张压缩后的图片
      *
-     * @param bm
-     * @param quality 压缩率
+     * @param image
+     * @param size
      * @return
      */
-    public static String saveBitmapByQuality(Bitmap bm, int quality, Context context) {
-        String croppath = "";
+    public static Bitmap compressImage(Bitmap image, int size) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        image.compress(Bitmap.CompressFormat.JPEG, 100, baos);//质量压缩方法，这里100表示不压缩，把压缩后的数据存放到baos中
+        int options = 100;
+        while (baos.toByteArray().length / 1024 > size) {    //循环判断如果压缩后图片是否大于100kb,大于继续压缩
+            baos.reset();//重置baos即清空baos
+            options -= 10;//每次都减少10
+            image.compress(Bitmap.CompressFormat.JPEG, options, baos);//这里压缩options%，把压缩后的数据存放到baos中
+
+        }
+        ByteArrayInputStream isBm = new ByteArrayInputStream(baos.toByteArray());//把压缩后的数据baos存放到ByteArrayInputStream中
+        Bitmap bitmap = BitmapFactory.decodeStream(isBm, null, null);//把ByteArrayInputStream数据生成图片
+        return bitmap;
+    }
+
+    //在自定义目录创建图片
+    public static File outputIamge(Context context,Bitmap bitmap) {
+
+        //保存在私有目录下
+        File outputIamge = new File(context.getExternalCacheDir() +generateImgePath(context)+ ".png");
+
+        //创建
         try {
-            File f = new File(FileUtils.generateImgePath(context));
-            //得到相机图片存到本地的图片
-            croppath = f.getPath();
-            if (f.exists()) {
-                f.delete();
-            }
-            FileOutputStream out = new FileOutputStream(f);
-            bm.compress(Bitmap.CompressFormat.JPEG, quality, out);
-            out.flush();
-            out.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            outputIamge.createNewFile();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return croppath;
-    }
 
-    public static Bitmap decodeUriAsBitmap(Uri uri, Context context) {
-        Bitmap bitmap = null;
+        FileOutputStream fOut = null;
+
         try {
-            // 先通过getContentResolver方法获得一个ContentResolver实例，
-            // 调用openInputStream(Uri)方法获得uri关联的数据流stream
-            // 把上一步获得的数据流解析成为bitmap
-            bitmap = BitmapFactory.decodeStream(context.getContentResolver().openInputStream(uri));
+            fOut = new FileOutputStream(outputIamge);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-            return null;
         }
-        return bitmap;
+
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, fOut);
+
+        try {
+            fOut.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            fOut.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return outputIamge;
     }
 }

@@ -1,13 +1,17 @@
 package com.example.xuhong.takephotoandroidn_master.UseIn_Activity;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -27,8 +31,15 @@ import com.example.xuhong.takephotoandroidn_master.other.PermissionListener;
 import com.squareup.picasso.Picasso;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+
+import static com.example.xuhong.takephotoandroidn_master.other.FileUtils.getImageContentUri;
 
 public class Activity_TakePhotoActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -39,13 +50,15 @@ public class Activity_TakePhotoActivity extends AppCompatActivity implements Vie
 
 
     //上传图片用到
-    private String FILE_PROVIDER_AUTHORITY;
     private static final int REQ_TAKE_PHOTO = 100;
     private static final int REQ_ALBUM = 101;
     private static final int REQ_ZOOM = 102;
     private PermissionListener permissionListener;
     private Uri outputUri;
     private String imgPath = FileUtils.generateImgePath(this);
+
+    private static final String FILE_PROVIDER_AUTHORITY = "com.chaychan.androidnadaption.fileprovider";
+
 
 
     @Override
@@ -62,7 +75,7 @@ public class Activity_TakePhotoActivity extends AppCompatActivity implements Vie
         Button btAlbum = (Button) findViewById(R.id.btAlbum);
         btAlbum.setOnClickListener(this);
         tvShow = (TextView) findViewById(R.id.tvShow);
-        ivShow = (ImageView) findViewById(R.id.ivShow);
+
     }
 
 
@@ -98,9 +111,9 @@ public class Activity_TakePhotoActivity extends AppCompatActivity implements Vie
     }
 
     private void openCamera() {
-
         // 指定调用相机拍照后照片的储存路径
         //L.i("拍照完图片的路径为：" + imgPath);
+
         File imgFile = new File(imgPath);
         Uri imgUri = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -136,31 +149,6 @@ public class Activity_TakePhotoActivity extends AppCompatActivity implements Vie
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case 1:
-
-                if (grantResults.length > 0) {
-                    List<String> deniedPermissions = new ArrayList<>();
-                    for (int i = 0; i < grantResults.length; i++) {
-                        int grantResult = grantResults[i];
-                        String permission = permissions[i];
-                        if (grantResult != PackageManager.PERMISSION_GRANTED) {
-                            deniedPermissions.add(permission);
-                        }
-                    }
-
-                    if (deniedPermissions.isEmpty()) {
-                        permissionListener.onGranted();
-                    } else {
-                        permissionListener.onDenied(deniedPermissions);
-                    }
-                }
-                break;
-        }
-    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -204,15 +192,16 @@ public class Activity_TakePhotoActivity extends AppCompatActivity implements Vie
                     case REQ_ZOOM://裁剪后回调
                         if (data != null) {
                             if (outputUri != null) {
-                                bm = FileUtils.decodeUriAsBitmap(outputUri, this);
+                                bm = decodeUriAsBitmap(outputUri);
                                 //如果是拍照的,删除临时文件
                                 temFile = new File(imgPath);
                                 if (temFile.exists()) {
                                     temFile.delete();
                                 }
-                                String scaleImgPath = FileUtils.saveBitmapByQuality(bm, 80, this);//进行压缩
-                                Picasso.with(this).load(scaleImgPath).error(R.drawable.ic_warning).into(ivShow);
-                                Log.i("==w","压缩后图片的路径为：" + scaleImgPath);
+                                Bitmap bitmap = FileUtils.compressImage(bm, 100);
+                                File file = outputIamge(bitmap);
+                                Picasso.with(this).load(file).error(R.drawable.ic_warning).into(ivShow);
+                               // ivShow.setImageBitmap(bitmap);
                             }
                         } else {
                             //L.e("选择图片发生错误，图片可能已经移位或删除");
@@ -224,45 +213,36 @@ public class Activity_TakePhotoActivity extends AppCompatActivity implements Vie
     }
 
 
-    /**
-     * 安卓7.0裁剪根据文件路径获取uri
-     */
-    public Uri getImageContentUri(File imageFile) {
-        String filePath = imageFile.getAbsolutePath();
-        Cursor cursor = getContentResolver().query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                new String[]{MediaStore.Images.Media._ID},
-                MediaStore.Images.Media.DATA + "=? ",
-                new String[]{filePath}, null);
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case 1:
 
-        if (cursor != null && cursor.moveToFirst()) {
-            int id = cursor.getInt(cursor
-                    .getColumnIndex(MediaStore.MediaColumns._ID));
-            Uri baseUri = Uri.parse("content://media/external/images/media");
-            return Uri.withAppendedPath(baseUri, "" + id);
-        } else {
-            if (imageFile.exists()) {
-                ContentValues values = new ContentValues();
-                values.put(MediaStore.Images.Media.DATA, filePath);
-                return getContentResolver().insert(
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-            } else {
-                return null;
-            }
+                if (grantResults.length > 0) {
+                    List<String> deniedPermissions = new ArrayList<>();
+                    for (int i = 0; i < grantResults.length; i++) {
+                        int grantResult = grantResults[i];
+                        String permission = permissions[i];
+                        if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                            deniedPermissions.add(permission);
+                        }
+                    }
+
+                    if (deniedPermissions.isEmpty()) {
+                        permissionListener.onGranted();
+                    } else {
+                        permissionListener.onDenied(deniedPermissions);
+                    }
+                }
+                break;
         }
     }
 
 
-    /**
-     * 发起剪裁图片的请求
-     *
-     * @param srcFile     原文件的File
-     * @param output      输出文件的File
-     * @param requestCode 请求码
-     */
-    public void startPhotoZoom(File srcFile, File output, int requestCode) {
+    public void startPhotoZoom( File srcFile, File output, int requestCode) {
         Intent intent = new Intent("com.android.camera.action.CROP");
-        intent.setDataAndType(getImageContentUri(srcFile), "image/*");
+        intent.setDataAndType(getImageContentUri(this, srcFile), "image/*");
         // crop为true是设置在开启的intent中设置显示的view可以剪裁
         intent.putExtra("crop", "true");
 
@@ -271,15 +251,70 @@ public class Activity_TakePhotoActivity extends AppCompatActivity implements Vie
         intent.putExtra("aspectY", 1);
 
         // outputX,outputY 是剪裁图片的宽高
-        intent.putExtra("outputX", 350);
-        intent.putExtra("outputY", 350);
-
-        intent.putExtra("return-data", false);
+        intent.putExtra("outputX", 800);
+        intent.putExtra("outputY", 480);
+        intent.putExtra("return-data", false);// true:不返回uri，false：返回uri
         intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(output));
         intent.putExtra("outputFormat", Bitmap.CompressFormat.JPEG.toString());
-        startActivityForResult(intent, requestCode);
+        // intent.putExtra("noFaceDetection", true); // no face detection
 
+        startActivityForResult(intent, requestCode);
     }
 
 
+    public  Bitmap decodeUriAsBitmap(Uri uri) {
+        Bitmap bitmap = null;
+        try {
+            // 先通过getContentResolver方法获得一个ContentResolver实例，
+            // 调用openInputStream(Uri)方法获得uri关联的数据流stream
+            // 把上一步获得的数据流解析成为bitmap
+            bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(uri));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return bitmap;
+    }
+
+    //在自定义目录创建图片
+    private File outputIamge(Bitmap bitmap) {
+
+        //根据日期来命名
+        SimpleDateFormat sdf = new SimpleDateFormat("MMddHHmmss");
+        String time = sdf.format(new Date());
+
+        //保存在私有目录下
+        File outputIamge = new File(getExternalCacheDir()+ time + ".png");
+
+        //创建
+        try {
+            outputIamge.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        FileOutputStream fOut = null;
+
+        try {
+            fOut = new FileOutputStream(outputIamge);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, fOut);
+
+        try {
+            fOut.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            fOut.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return outputIamge;
+    }
 }
