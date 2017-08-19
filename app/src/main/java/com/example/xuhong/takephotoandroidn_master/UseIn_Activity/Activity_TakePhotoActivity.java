@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -66,7 +67,7 @@ public class Activity_TakePhotoActivity extends AppCompatActivity implements Vie
                     //失败回调
                     @Override
                     public void failed(int errorCode, List<String> deniedPermissions) {
-
+                        Log.e("==w",deniedPermissions.toString());
                     }
                 });
                 break;

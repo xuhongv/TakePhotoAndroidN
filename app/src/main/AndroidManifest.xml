@@ -19,6 +19,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".UseIn_Activity.Activity_TakePhotoActivity"/>
+        <activity android:name=".UseIn_Fragment.Fragment_TakePhotoActivity"/>
         <provider
             android:name="android.support.v4.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

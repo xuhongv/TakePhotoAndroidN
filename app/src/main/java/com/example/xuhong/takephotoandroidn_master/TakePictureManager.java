@@ -121,7 +121,7 @@ public class TakePictureManager {
                 @Override
                 public void onDenied(List<String> deniedPermissions) {
                     if (takeCallBacklistener != null) {
-                        takeCallBacklistener.failed(0, null);
+                        takeCallBacklistener.failed(1, deniedPermissions);
                     }
                 }
             });
@@ -357,8 +357,10 @@ public class TakePictureManager {
                     if (deniedPermissions.isEmpty()) {
                         permissionListener.onGranted();
                     } else {
-                        Log.e("==w","权限："+deniedPermissions);
                         permissionListener.onDenied(deniedPermissions);
+                        if (takeCallBacklistener != null) {
+                            takeCallBacklistener.failed(1, deniedPermissions);
+                        }
                     }
                 }
                 break;
@@ -380,6 +382,10 @@ public class TakePictureManager {
 
         if (!permissionList.isEmpty()) {
             ActivityCompat.requestPermissions((Activity) mContext, permissionList.toArray(new String[permissionList.size()]), 1);
+            if (takeCallBacklistener != null) {
+                takeCallBacklistener.failed(1, permissionList);
+            }
+
         } else {
             permissionListener.onGranted();
         }
