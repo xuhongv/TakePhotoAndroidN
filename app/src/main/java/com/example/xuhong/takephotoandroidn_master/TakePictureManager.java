@@ -115,19 +115,20 @@ public class TakePictureManager {
     public void startTakeWayByCarema() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             //如果是6.0或6.0以上，则要申请运行时权限，这里需要申请拍照和写入SD卡的权限
-            requestRuntimePermission(new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, new PermissionListener() {
-                @Override
-                public void onGranted() {
-                    startOpencamera();
-                }
+            requestRuntimePermission(new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}
+                    , new PermissionListener() {
+                        @Override
+                        public void onGranted() {
+                            startOpencamera();
+                        }
 
-                @Override
-                public void onDenied(List<String> deniedPermissions) {
-                    if (takeCallBacklistener != null) {
-                        takeCallBacklistener.failed(1, deniedPermissions);
-                    }
-                }
-            });
+                        @Override
+                        public void onDenied(List<String> deniedPermissions) {
+                            if (takeCallBacklistener != null) {
+                                takeCallBacklistener.failed(1, deniedPermissions);
+                            }
+                        }
+                    });
             return;
         }
         startOpencamera();
@@ -137,6 +138,28 @@ public class TakePictureManager {
     public void startTakeWayByAlbum() {
 
         imgPath = generateImgePath(mContext);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            //如果是6.0或6.0以上，则要申请运行时权限，这里需要申请拍照和写入SD卡的权限
+            requestRuntimePermission(new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, new PermissionListener() {
+                @Override
+                public void onGranted() {
+                    startAlbum();
+                }
+
+                @Override
+                public void onDenied(List<String> deniedPermissions) {
+                    if (takeCallBacklistener != null) {
+                        takeCallBacklistener.failed(1, deniedPermissions);
+                    }
+                }
+            });
+
+            return;
+        }
+        startAlbum();
+    }
+
+    private void startAlbum() {
         Intent intent = new Intent(Intent.ACTION_PICK, null);
         intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 "image/*");
@@ -365,6 +388,7 @@ public class TakePictureManager {
      * 申请运行时权限
      */
     private void requestRuntimePermission(String[] permissions, PermissionListener listener) {
+
         permissionListener = listener;
         List<String> permissionList = new ArrayList<>();
         for (String permission : permissions) {
@@ -373,12 +397,18 @@ public class TakePictureManager {
             }
         }
 
+        //此处兼容了无法在fragment回调监听事件
         if (!permissionList.isEmpty()) {
-            ActivityCompat.requestPermissions((Activity) mContext, permissionList.toArray(new String[permissionList.size()]), 1);
+            if (isActicity) {
+                ActivityCompat.requestPermissions((Activity) mContext, permissionList.toArray(new String[permissionList.size()]), 1);
+            } else {
+                mFragment.requestPermissions(permissionList.toArray(new String[permissionList.size()]), 1);
+            }
+
+
             if (takeCallBacklistener != null) {
                 takeCallBacklistener.failed(1, permissionList);
             }
-
         } else {
             permissionListener.onGranted();
         }
@@ -605,9 +635,9 @@ public class TakePictureManager {
     }
 
 
-
-
-    /*******************-适配小米手机************************/
+    /*******************
+     * -适配小米手机
+     ************************/
     @SuppressLint("NewApi")
     public static String getPath(final Context context, final Uri uri) {
         final boolean isKitKat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
@@ -644,7 +674,7 @@ public class TakePictureManager {
                     contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
                 }
                 final String selection = "_id=?";
-                final String[] selectionArgs = new String[] { split[1] };
+                final String[] selectionArgs = new String[]{split[1]};
                 return getDataColumn(context, contentUri, selection,
                         selectionArgs);
             }
@@ -667,7 +697,7 @@ public class TakePictureManager {
     public static String getDataColumn(Context context, Uri uri, String selection, String[] selectionArgs) {
         Cursor cursor = null;
         final String column = "_data";
-        final String[] projection = { column };
+        final String[] projection = {column};
         try {
             cursor = context.getContentResolver().query(uri, projection,
                     selection, selectionArgs, null);
