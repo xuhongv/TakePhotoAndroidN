@@ -248,7 +248,7 @@ public class TakePictureManager {
                     temFile = srcFile;
 
                     if (isTailor) {
-                        //裁剪之后的文件和url
+                        //裁剪之后的文件和ur
                         outPutFile = new File(generateImgePath(mContext));
                         outputUri = Uri.fromFile(outPutFile);
                         //发起裁剪请求
