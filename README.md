@@ -97,6 +97,7 @@ TakePictureManager takePictureManager takePictureManager = new TakePictureManage
 |-------|------|-----------|
 | setTailor(int aspectX, int aspectY, int outputX, int outputY) | 要裁剪的宽比例、要裁剪的高比例、要裁剪图片的宽、要裁剪图片的高|一旦调用，表示要裁剪，**默认不裁剪**|
 | startTakeWayByAlbum()| 无参数 |调用相册|
+| sstartTakeWayByCarema()| 无参数 |调用相机|
 | setTakePictureCallBackListener（takePictureCallBackListener listener）| takePictureCallBackListener 回调接口|调用相机或相册后的回调|
 
 
