@@ -50,15 +50,20 @@ public class Activity_TakePhotoActivity extends AppCompatActivity implements Vie
             case R.id.btCamera:
 
                 takePictureManager = new TakePictureManager(this);
+                //开启裁剪 比例 1:3 宽高 350 350  (默认不裁剪)
                 takePictureManager.setTailor(1, 3, 350, 350);
+                //拍照方式
                 takePictureManager.startTakeWayByCarema();
+                //回调
                 takePictureManager.setTakePictureCallBackListener(new TakePictureManager.takePictureCallBackListener() {
+                    //成功拿到图片,isTailor 是否裁剪？ ,outFile 拿到的文件 ,filePath拿到的URl
                     @Override
                     public void successful(boolean isTailor, File outFile, Uri filePath) {
                         tvShow.setText(filePath.getPath());
                         Picasso.with(Activity_TakePhotoActivity.this).load(outFile).error(R.mipmap.ic_launcher).into(ivShow);
                     }
 
+                    //失败回调
                     @Override
                     public void failed(int errorCode, List<String> deniedPermissions) {
 
@@ -89,12 +94,14 @@ public class Activity_TakePhotoActivity extends AppCompatActivity implements Vie
     }
 
 
+    //把本地的onActivityResult()方法回调绑定到对象
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         takePictureManager.attachToActivityForResult(requestCode, resultCode, data);
     }
 
+    //onRequestPermissionsResult()方法权限回调绑定到对象
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);

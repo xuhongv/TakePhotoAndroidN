@@ -320,8 +320,9 @@ public class TakePictureManager {
         imgPath = generateImgePath(mContext);
         File imgFile = new File(imgPath);
         Uri imgUri = null;
+
+        //判断当前手机版本
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            //如果是7.0或以上
             imgUri = FileProvider.getUriForFile(mContext, FILE_PROVIDER_AUTHORITY, imgFile);
         } else {
             imgUri = Uri.fromFile(imgFile);
@@ -329,6 +330,8 @@ public class TakePictureManager {
 
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, imgUri);
+
+        //判断当前在哪启动
         if (isActicity) {
             mActivity.startActivityForResult(intent, CODE_ORIGINAL_PHOTO_CAMERA);
         } else {

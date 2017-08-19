@@ -16,27 +16,19 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".UseIn_Activity.Activity_TakePhotoActivity"
-            android:label="在Activity使用" />
-        <activity
-            android:name=".UseIn_Fragment.Fragment_TakePhotoActivity"
-            android:label="在Fragment使用" />
-
         <provider
             android:name="android.support.v4.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
-            <!--元数据-->
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_provider_paths"/>
         </provider>
+
     </application>
 
 </manifest>
